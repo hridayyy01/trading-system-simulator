@@ -1,0 +1,3 @@
+/Users/hridaymatlani/Documents/projects/trading-system/build/CMakeFiles/trading-system.dir
+/Users/hridaymatlani/Documents/projects/trading-system/build/CMakeFiles/edit_cache.dir
+/Users/hridaymatlani/Documents/projects/trading-system/build/CMakeFiles/rebuild_cache.dir
