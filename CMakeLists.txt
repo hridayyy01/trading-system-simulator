@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(trading-system src/main.cpp)
+add_executable(trading-system
+    src/main.cpp
+    src/orderbook/OrderBook.cpp
+)
 
 target_include_directories(trading-system PRIVATE include)
