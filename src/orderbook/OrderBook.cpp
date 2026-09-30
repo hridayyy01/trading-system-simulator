@@ -1,5 +1,6 @@
 #include "orderbook/OrderBook.hpp"
 
+#include <algorithm>
 #include <iostream>
 
 void OrderBook::addOrder(const Order& order) {
@@ -38,6 +39,61 @@ bool OrderBook::cancelOrder(uint64_t id) {
     }
 
     return false;
+}
+
+std::vector<Trade> OrderBook::matchOrder(Order& incoming) {
+    std::vector<Trade> trades;
+    uint32_t& qty = incoming.qty;
+
+    if (incoming.side == Side::BUY) {
+        while (qty > 0 && !asks_.empty()) {
+            auto ask_it = asks_.begin();
+            const double ask_price = ask_it->first;
+            if (incoming.price < ask_price) {
+                break;
+            }
+
+            auto& level = ask_it->second;
+            Order& resting = level.front();
+            const uint32_t fill_qty = std::min(qty, resting.qty);
+            trades.push_back(
+                Trade{incoming.id, resting.id, ask_price, fill_qty});
+            qty -= fill_qty;
+            resting.qty -= fill_qty;
+
+            if (resting.qty == 0) {
+                level.pop_front();
+            }
+            if (level.empty()) {
+                asks_.erase(ask_it);
+            }
+        }
+    } else {
+        while (qty > 0 && !bids_.empty()) {
+            auto bid_it = bids_.begin();
+            const double bid_price = bid_it->first;
+            if (incoming.price > bid_price) {
+                break;
+            }
+
+            auto& level = bid_it->second;
+            Order& resting = level.front();
+            const uint32_t fill_qty = std::min(qty, resting.qty);
+            trades.push_back(
+                Trade{resting.id, incoming.id, bid_price, fill_qty});
+            qty -= fill_qty;
+            resting.qty -= fill_qty;
+
+            if (resting.qty == 0) {
+                level.pop_front();
+            }
+            if (level.empty()) {
+                bids_.erase(bid_it);
+            }
+        }
+    }
+
+    return trades;
 }
 
 void OrderBook::print() const {
