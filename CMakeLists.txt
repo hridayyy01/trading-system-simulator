@@ -11,3 +11,27 @@ add_executable(trading-system
 )
 
 target_include_directories(trading-system PRIVATE include)
+
+include(FetchContent)
+
+FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG v1.15.2
+)
+
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+add_executable(orderbook_test
+    tests/OrderBookTest.cpp
+    src/orderbook/OrderBook.cpp
+)
+
+target_include_directories(orderbook_test PRIVATE include)
+target_link_libraries(orderbook_test PRIVATE GTest::gtest_main)
+
+include(GoogleTest)
+gtest_discover_tests(orderbook_test)
