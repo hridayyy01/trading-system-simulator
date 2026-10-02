@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(trading-system
     src/main.cpp
+    src/engine/MatchingEngine.cpp
     src/orderbook/OrderBook.cpp
 )
 
