@@ -5,6 +5,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(ENABLE_TSAN "Compile with ThreadSanitizer (-fsanitize=thread)" OFF)
+if(ENABLE_TSAN)
+    add_compile_options(-g -O1 -fsanitize=thread)
+    add_link_options(-fsanitize=thread)
+endif()
+
 add_executable(trading-system
     src/main.cpp
     src/engine/MatchingEngine.cpp
@@ -50,6 +56,7 @@ gtest_discover_tests(matching_engine_test)
 
 add_executable(spsc_queue_test
     tests/SPSCQueueTest.cpp
+    tests/SPSCQueueStressTest.cpp
 )
 
 target_include_directories(spsc_queue_test PRIVATE include)
