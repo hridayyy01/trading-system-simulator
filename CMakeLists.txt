@@ -47,3 +47,12 @@ target_include_directories(matching_engine_test PRIVATE include)
 target_link_libraries(matching_engine_test PRIVATE GTest::gtest_main)
 
 gtest_discover_tests(matching_engine_test)
+
+add_executable(spsc_queue_test
+    tests/SPSCQueueTest.cpp
+)
+
+target_include_directories(spsc_queue_test PRIVATE include)
+target_link_libraries(spsc_queue_test PRIVATE GTest::gtest_main)
+
+gtest_discover_tests(spsc_queue_test)
