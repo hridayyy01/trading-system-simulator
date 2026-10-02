@@ -36,3 +36,14 @@ target_link_libraries(orderbook_test PRIVATE GTest::gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(orderbook_test)
+
+add_executable(matching_engine_test
+    tests/MatchingEngineTest.cpp
+    src/engine/MatchingEngine.cpp
+    src/orderbook/OrderBook.cpp
+)
+
+target_include_directories(matching_engine_test PRIVATE include)
+target_link_libraries(matching_engine_test PRIVATE GTest::gtest_main)
+
+gtest_discover_tests(matching_engine_test)

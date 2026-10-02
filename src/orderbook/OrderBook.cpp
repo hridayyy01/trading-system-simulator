@@ -96,6 +96,33 @@ std::vector<Trade> OrderBook::matchOrder(Order& incoming) {
     return trades;
 }
 
+bool OrderBook::wouldSelfTrade(const Order& incoming) const {
+    if (incoming.side == Side::BUY) {
+        for (const auto& [price, orders] : asks_) {
+            if (incoming.price < price) {
+                break;
+            }
+            for (const auto& resting : orders) {
+                if (resting.id == incoming.id) {
+                    return true;
+                }
+            }
+        }
+    } else {
+        for (const auto& [price, orders] : bids_) {
+            if (incoming.price > price) {
+                break;
+            }
+            for (const auto& resting : orders) {
+                if (resting.id == incoming.id) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 void OrderBook::print() const {
     std::cout << "Bids:\n";
     for (const auto& [price, orders] : bids_) {

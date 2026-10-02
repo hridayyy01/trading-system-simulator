@@ -12,6 +12,7 @@ public:
     void addOrder(const Order& order);
     bool cancelOrder(uint64_t id);
     std::vector<Trade> matchOrder(Order& order);
+    bool wouldSelfTrade(const Order& incoming) const;
     void print() const;
 
 private:
