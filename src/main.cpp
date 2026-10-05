@@ -1,27 +1,46 @@
+#include "engine/MatchingEngine.hpp"
 #include "feed/FeedSimulator.hpp"
 #include "queue/SPSCQueue.hpp"
 
+#include <atomic>
+#include <cstddef>
 #include <iostream>
+#include <thread>
 
 int main() {
     SPSCQueue<Order> queue;
-    FeedSimulator feed{42};
+    MatchingEngine engine;
+    std::atomic<bool> running{true};
+    std::uint64_t total_trades = 0;
 
-    constexpr std::size_t order_count = 100;
-    const std::size_t pushed = feed.pushOrders(queue, order_count);
+    constexpr std::size_t order_count = 10'000;
 
-    std::size_t popped = 0;
-    Order order{};
-    while (queue.pop(order)) {
-        ++popped;
-    }
+    std::thread consumer([&] {
+        Order order{};
+        while (true) {
+            if (queue.pop(order)) {
+                const auto trades = engine.processOrder(order);
+                total_trades += trades.size();
+            } else if (!running.load(std::memory_order_acquire)) {
+                break;
+            }
+        }
 
-    std::cout << "Generated and pushed: " << pushed << '\n';
-    std::cout << "Popped from queue: " << popped << '\n';
+        while (queue.pop(order)) {
+            const auto trades = engine.processOrder(order);
+            total_trades += trades.size();
+        }
+    });
 
-    if (pushed != order_count || popped != order_count) {
-        return 1;
-    }
+    std::thread producer([&] {
+        FeedSimulator feed{42};
+        feed.pushOrders(queue, order_count);
+        running.store(false, std::memory_order_release);
+    });
 
+    producer.join();
+    consumer.join();
+
+    std::cout << "Total trades: " << total_trades << '\n';
     return 0;
 }
