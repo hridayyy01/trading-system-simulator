@@ -1,7 +1,24 @@
 #include "orderbook/OrderBook.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <iostream>
+
+namespace {
+
+void recordTradeLatency(const Order& incoming,
+                        std::vector<int64_t>* latency_ns) {
+    if (latency_ns == nullptr) {
+        return;
+    }
+    const auto exec_time = std::chrono::high_resolution_clock::now();
+    latency_ns->push_back(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(exec_time -
+                                                             incoming.created_at)
+            .count());
+}
+
+}  // namespace
 
 void OrderBook::addOrder(const Order& order) {
     if (order.side == Side::BUY) {
@@ -41,7 +58,8 @@ bool OrderBook::cancelOrder(uint64_t id) {
     return false;
 }
 
-std::vector<Trade> OrderBook::matchOrder(Order& incoming) {
+std::vector<Trade> OrderBook::matchOrder(Order& incoming,
+                                         std::vector<int64_t>* latency_ns) {
     std::vector<Trade> trades;
     uint32_t& qty = incoming.qty;
 
@@ -56,6 +74,7 @@ std::vector<Trade> OrderBook::matchOrder(Order& incoming) {
             auto& level = ask_it->second;
             Order& resting = level.front();
             const uint32_t fill_qty = std::min(qty, resting.qty);
+            recordTradeLatency(incoming, latency_ns);
             trades.push_back(
                 Trade{incoming.id, resting.id, ask_price, fill_qty});
             qty -= fill_qty;
@@ -79,6 +98,7 @@ std::vector<Trade> OrderBook::matchOrder(Order& incoming) {
             auto& level = bid_it->second;
             Order& resting = level.front();
             const uint32_t fill_qty = std::min(qty, resting.qty);
+            recordTradeLatency(incoming, latency_ns);
             trades.push_back(
                 Trade{resting.id, incoming.id, bid_price, fill_qty});
             qty -= fill_qty;

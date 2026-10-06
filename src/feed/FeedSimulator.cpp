@@ -10,7 +10,8 @@ Order FeedSimulator::nextOrder() {
                  side,
                  price_dist_(rng_),
                  qty_dist_(rng_),
-                 std::chrono::nanoseconds{next_ts_++}};
+                 std::chrono::nanoseconds{next_ts_++},
+                 std::chrono::high_resolution_clock::now()};
 }
 
 std::size_t FeedSimulator::pushOrders(SPSCQueue<Order>& queue,

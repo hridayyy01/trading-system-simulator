@@ -8,7 +8,8 @@ bool isValid(const Order& order) {
 
 }  // namespace
 
-std::vector<Trade> MatchingEngine::processOrder(Order order) {
+std::vector<Trade> MatchingEngine::processOrder(Order order,
+                                                std::vector<int64_t>* latency_ns) {
     if (!isValid(order)) {
         return {};
     }
@@ -16,7 +17,7 @@ std::vector<Trade> MatchingEngine::processOrder(Order order) {
         return {};
     }
 
-    auto trades = book_.matchOrder(order);
+    auto trades = book_.matchOrder(order, latency_ns);
     if (order.qty > 0) {
         book_.addOrder(order);
     }
