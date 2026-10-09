@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -52,6 +53,18 @@ Config parseArgs(int argc, char* argv[]) {
     return config;
 }
 
+void printTrades(Side aggressor, const std::vector<Trade>& trades) {
+    // Single consumer thread is the only writer to stdout, so plain
+    // std::cout is safe here. With multiple consumers later, push log
+    // lines onto a lock-free SPSC/MPSC queue and drain them from one
+    // dedicated logger thread instead of sharing std::cout.
+    const char* side = aggressor == Side::BUY ? "BUY" : "SELL";
+    for (const auto& trade : trades) {
+        std::cout << "TRADE: " << side << ' ' << trade.qty << " @ "
+                  << std::fixed << std::setprecision(2) << trade.price << '\n';
+    }
+}
+
 LatencyPercentiles computePercentiles(std::vector<int64_t> samples) {
     std::sort(samples.begin(), samples.end());
 
@@ -88,6 +101,7 @@ int main(int argc, char* argv[]) {
             if (queue.pop(order)) {
                 const auto trades =
                     engine.processOrder(order, &latency_samples_ns);
+                printTrades(order.side, trades);
                 total_trades += trades.size();
             } else if (!running.load(std::memory_order_acquire)) {
                 break;
@@ -96,6 +110,7 @@ int main(int argc, char* argv[]) {
 
         while (queue.pop(order)) {
             const auto trades = engine.processOrder(order, &latency_samples_ns);
+            printTrades(order.side, trades);
             total_trades += trades.size();
         }
     });
