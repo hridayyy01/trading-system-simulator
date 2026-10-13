@@ -66,3 +66,12 @@ target_include_directories(spsc_queue_test PRIVATE include)
 target_link_libraries(spsc_queue_test PRIVATE GTest::gtest_main)
 
 gtest_discover_tests(spsc_queue_test)
+
+add_executable(mutex_queue_test
+    tests/MutexQueueTest.cpp
+)
+
+target_include_directories(mutex_queue_test PRIVATE include)
+target_link_libraries(mutex_queue_test PRIVATE GTest::gtest_main)
+
+gtest_discover_tests(mutex_queue_test)
