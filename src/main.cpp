@@ -1,82 +1,16 @@
+#include "bench/Benchmark.hpp"
+#include "cli/Cli.hpp"
 #include "engine/MatchingEngine.hpp"
 #include "feed/FeedSimulator.hpp"
 #include "queue/SPSCQueue.hpp"
 
-#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <cstddef>
-#include <cstdint>
 #include <cstdlib>
-#include <iomanip>
 #include <iostream>
 #include <stdexcept>
-#include <string>
 #include <thread>
 #include <vector>
-
-struct Config {
-    std::size_t orders = 10'000;
-    std::uint32_t seed = 42;
-};
-
-struct LatencyPercentiles {
-    int64_t p50;
-    int64_t p95;
-    int64_t p99;
-};
-
-void printUsage(const char* program) {
-    std::cerr << "Usage: " << program << " [--orders N] [--seed N]\n";
-}
-
-Config parseArgs(int argc, char* argv[]) {
-    Config config;
-
-    for (int i = 1; i < argc; ++i) {
-        const std::string arg = argv[i];
-        if (arg == "--orders") {
-            if (++i >= argc) {
-                throw std::invalid_argument("--orders requires a value");
-            }
-            config.orders = static_cast<std::size_t>(std::stoull(argv[i]));
-        } else if (arg == "--seed") {
-            if (++i >= argc) {
-                throw std::invalid_argument("--seed requires a value");
-            }
-            config.seed = static_cast<std::uint32_t>(std::stoul(argv[i]));
-        } else {
-            throw std::invalid_argument("unknown argument: " + arg);
-        }
-    }
-
-    return config;
-}
-
-void printTrades(Side aggressor, const std::vector<Trade>& trades) {
-    // Single consumer thread is the only writer to stdout, so plain
-    // std::cout is safe here. With multiple consumers later, push log
-    // lines onto a lock-free SPSC/MPSC queue and drain them from one
-    // dedicated logger thread instead of sharing std::cout.
-    const char* side = aggressor == Side::BUY ? "BUY" : "SELL";
-    for (const auto& trade : trades) {
-        std::cout << "TRADE: " << side << ' ' << trade.qty << " @ "
-                  << std::fixed << std::setprecision(2) << trade.price << '\n';
-    }
-}
-
-LatencyPercentiles computePercentiles(std::vector<int64_t> samples) {
-    std::sort(samples.begin(), samples.end());
-
-    const auto sample_at = [&](double percentile) {
-        const auto index =
-            static_cast<std::size_t>((samples.size() - 1) * percentile);
-        return samples[index];
-    };
-
-    return LatencyPercentiles{sample_at(0.50), sample_at(0.95),
-                              sample_at(0.99)};
-}
 
 int main(int argc, char* argv[]) {
     Config config;
@@ -129,14 +63,7 @@ int main(int argc, char* argv[]) {
                                                               start_time)
             .count();
 
-    std::cout << "Total orders: " << config.orders << '\n';
-    std::cout << "Total trades: " << total_trades << '\n';
-    if (!latency_samples_ns.empty()) {
-        const auto latency = computePercentiles(latency_samples_ns);
-        std::cout << "Latency p50: " << latency.p50 << " ns\n";
-        std::cout << "Latency p95: " << latency.p95 << " ns\n";
-        std::cout << "Latency p99: " << latency.p99 << " ns\n";
-    }
-    std::cout << "Wall-clock runtime: " << runtime_us << " us\n";
+    printBenchmarkReport(config.orders, total_trades, latency_samples_ns,
+                         runtime_us);
     return 0;
 }

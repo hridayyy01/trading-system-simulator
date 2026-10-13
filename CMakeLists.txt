@@ -13,6 +13,8 @@ endif()
 
 add_executable(trading-system
     src/main.cpp
+    src/cli/Cli.cpp
+    src/bench/Benchmark.cpp
     src/feed/FeedSimulator.cpp
     src/engine/MatchingEngine.cpp
     src/orderbook/OrderBook.cpp
